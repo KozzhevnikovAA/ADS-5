@@ -2,7 +2,6 @@
 #include <string>
 #include <map>
 #include "tstack.h"
-
 int prior(char sim) {
     switch (sim) {
         case '(': return 0; break;
@@ -14,7 +13,6 @@ int prior(char sim) {
         default: return 0; break;
     }
 }
-
 std::string infx2pstfx(std::string inf) {
     TStack<char, 100> opStack;
     std::string result = "";
@@ -48,7 +46,6 @@ std::string infx2pstfx(std::string inf) {
     }
     return result;
 }
-
 int calculate(const int a, const int b, const char oper) {
     switch (oper) {
         case '+': return b + a;
@@ -59,7 +56,6 @@ int calculate(const int a, const int b, const char oper) {
     }
     return 0;
 }
-
 int eval(std::string pref) {
     TStack<int, 100> opStack2;
     for (int i = 0; i < pref.size(); i++) {
@@ -74,5 +70,3 @@ int eval(std::string pref) {
     }
     return opStack2.pop();
 }
-
-
