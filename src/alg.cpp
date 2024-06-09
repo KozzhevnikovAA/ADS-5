@@ -1,72 +1,101 @@
 // Copyright 2021 NNTU-CS
+#include <math.h>
 #include <string>
 #include <map>
 #include "tstack.h"
-int prior(char sim) {
-    switch (sim) {
-        case '(': return 0; break;
-        case ')': return 1; break;
-        case '+': return 2; break;
-        case '-': return 2; break;
-        case '*': return 3; break;
-        case '/': return 3; break;
-        default: return 0; break;
-    }
+
+int ToInt(const std::string& str) {
+  int size = str.size();
+  int res = 0;
+  for (int i = 0; str[i]; i++) {
+    res += (pow(10, size - 1)) * (str[i]-'0');
+    size--;
+  }
+  return res;
+}
+int Operation(int num1, int num2, char sym) {
+  switch (sym) {
+  case '+':
+    return num1 + num2;
+  case '-':
+    return num1 - num2;
+  case '*':
+    return num1 * num2;
+  case '/':
+    return num1 / num2;
+  }
+  return 0;
+}
+int Priority(char sym) {
+  if (sym == '(')
+    return 0;
+  else if (sym == ')')
+    return 1;
+  else if (sym == '+' || sym == '-')
+    return 2;
+  else if (sym == '/' || sym == '*')
+    return 3;
+  else
+    return -1;
 }
 std::string infx2pstfx(std::string inf) {
-    TStack<char, 100> opStack;
-    std::string result = "";
-    for (int i = 0; i < inf.size(); i++) {
-        if (isdigit(inf[i]) != 0) {
-            result += inf[i];
-        } else if (prior(inf[i]) == 2 || prior(inf[i]) == 3) {
-            result += " ";
-            if (opStack.isEmpty() || prior(opStack.get()) == 0 || prior(inf[i]) > prior(opStack.get())) {
-                opStack.push(inf[i]);
-            } else if (prior(inf[i]) <= prior(opStack.get())) {
-                while (!opStack.isEmpty() && prior(inf[i]) <= prior(opStack.get())) {
-                    result += opStack.pop();
-                    result += " ";
-                }
-                opStack.push(inf[i]);
-            }
-        } else if (prior(inf[i]) == 0) {
-            opStack.push(inf[i]);
-        } else if (prior(inf[i]) == 1) {
-            while (prior(opStack.get()) != 0) {
-                result += " ";
-                result += opStack.pop();
-            }
-            opStack.pop();
+  bool flag = 0;
+  TStack<char, 100> stack;
+  std::string pref;
+  int prior = 0;
+  for (int i = 0; inf[i]; i++) {
+    if (inf[i] >= '0' && inf[i] <= '9') {
+      pref += inf[i];
+      if (inf[i+1] < '0' || inf[i+1] > '9') {
+        pref += ' ';
+      }
+      flag = 1;
+    } else if (inf[i] != '\0') {
+      prior = Priority(inf[i]);
+      if (inf[i] == ')') {
+        while (stack.ViewTop() != '(') {
+          pref+= stack.Pop();
+          pref += ' ';
         }
+        stack.Pop();
+      } else if (prior == 0 || prior > Priority(stack.ViewTop())
+        || stack.ViewTop() == -1) {
+        stack.Push(inf[i]);
+      } else if (Priority(stack.ViewTop()) >= prior) {
+          while (Priority(stack.ViewTop()) >= prior) {
+              pref += stack.Pop();
+          }
+          pref += ' ';
+          stack.Push(inf[i]);
+      }
     }
-    while (!opStack.isEmpty()) {
-        result += " ";
-        result += opStack.pop();
-    }
-    return result;
+  }
+  while (stack.ViewTop() != -1) {
+    pref += stack.Pop();
+    pref += ' ';
+  }
+  pref.pop_back();
+  return pref;
 }
-int calculate(const int a, const int b, const char oper) {
-    switch (oper) {
-        case '+': return b + a;
-        case '-': return b - a;
-        case '*': return a * b;
-        case '/': return b / a;
-        default: break;
-    }
-    return 0;
-}
+
 int eval(std::string pref) {
-    TStack<int, 100> opStack2;
-    for (int i = 0; i < pref.size(); i++) {
-        if (isdigit(pref[i]) != 0) {
-            int num = pref[i] - '0';
-            opStack2.push(num);
-        } else if (prior(pref[i]) == 2 || prior(pref[i]) == 3) {
-            int a = opStack2.pop();
-            int b = opStack2.pop();
-            opStack2.push(calculate(a, b, pref[i]));
-        }
+  std::string fake;
+  int num1 = 0, num2 = 0;
+  TStack<int, 100> stack;
+  for (int i = 0; pref[i]; i++) {
+    if (pref[i] >= '0' && pref[i] <= '9') {
+      while (pref[i] >= '0' && pref[i] <= '9') {
+        fake += pref[i++];
+      }
+      stack.Push(ToInt(fake));
+      fake = "";
+    } else if (pref[i] == ' ') {
+      continue;
+    } else {
+      num1 = stack.Pop();
+      num2 = stack.Pop();
+      stack.Push(Operation(num2, num1, pref[i]));
     }
-    return opStack2.pop();
+  }
+  return stack.Pop();
 }
